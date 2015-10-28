@@ -1,23 +1,29 @@
-# Databricks notebook source exported at Wed, 28 Oct 2015 07:27:21 UTC
-from numpy import log2
+# Databricks notebook source exported at Wed, 28 Oct 2015 18:58:41 UTC
+import sys
 from hashlib import md5
+
+from numpy import log2
 import numpy as np
 
-MAXINT = 1000003
+MAXINT = sys.maxint
+SEED = 20151028
 
 class HashMD5:
   def __init__(self, count, length = 5):
-    np.random.seed(20151019)
+    np.random.seed(SEED)
     self.count = count
     self.length = length
     self.addon = np.array([np.random.randint(MAXINT) for i in range(count)])
 
-  def getHash(self, value):
+  def getHash(self, intVal, strVal = '', mod = None):
     length = self.length
     def hash(value):
-      return int(md5(str(value).encode('utf-8')).hexdigest()[-length:], 16)
-    p = np.ones(self.count) * int(value) + self.addon
-    return np.fromiter(map(hash, p), dtype=np.int32)
+      return int(md5((str(value) + strVal).encode('utf-8')).hexdigest()[-length:], 16)
+    p = np.ones(self.count) * int(intVal) + self.addon
+    values = np.fromiter(map(hash, p), dtype=np.int32)
+    if mod:
+      return values % mod
+    return values
 
   def getCount(self):
     return self.count
