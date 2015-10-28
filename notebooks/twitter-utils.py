@@ -1,35 +1,47 @@
-# Databricks notebook source exported at Wed, 28 Oct 2015 07:25:33 UTC
+# Databricks notebook source exported at Wed, 28 Oct 2015 18:28:31 UTC
 
 import json
 import re
+from datetime import datetime
 from collections import Counter
 from operator import add
 
-def tryLoad(l):
+def _tryLoad(l):
     try:
         return json.loads(l)
     except:
         return None
 
 
-def extractTags(text):
-    tags = re.findall("#\w[\w']*", text)
-    return [tag.lower() for tag in tags]
-
-
-def rawToJson(dataURL):
+def tweetsFromFile(dataURL):
     return sc.textFile(dataURL) \
-             .map(tryLoad) \
-             .filter(lambda x: x)
+             .map(_tryLoad) \
+             .filter(_hasHashtags)
+
+
+def _hasHashtags(jsonObj):
+    return jsonObj and 'entities' in jsonObj and jsonObj['entities']['hashtags']
+
+
+def getHashtags(jsonObj):
+    return [p['text'].lower() for p in jsonObj['entities']['hashtags']]
+
+
+def getDate(jsonObj):
+    return datetime.strptime(jsonObj['created_at'], "%a %b %d %H:%M:%S +0000 %Y").date()
+  
+
+def getUser(jsonObj):
+    return jsonObj['user']['id_str']
 
 
 def getAllTags(data):
-    return data.map(lambda p: set(extractTags(p['text']))) \
+    return data.map(lambda p: set(getHashtags(p))) \
                .reduce(lambda a, b: a.union(b))
 
 
 def getAllUsers(data):
-    return data.map(lambda p: {p['user']['id']}) \
+    return data.map(lambda p: {p['user']['id_str']}) \
                .reduce(lambda a, b: a.union(b))
 
 
@@ -44,7 +56,7 @@ def getUserTagsRDD(data, tagsFilter):
     if tagsFilter:
         tags = [tag for tag in tags if tag in tagsFilter]
     tagsId = sc.broadcast({b: a for a, b in enumerate(tags)})
-    usertags = data.map(lambda p: (p["user"]["id"], extractTags(p["text"]))) \
+    usertags = data.map(lambda p: (getUser(p), getHashtags(p))) \
                    .mapValues(lambda tags: \
                         [tag for tag in tags if tag in tagsId.value])
     tagsCount = usertags.mapValues(lambda tags: \
@@ -58,7 +70,7 @@ def getTagUsersRDD(data, usersFilter):
     if usersFilter:
         users = [user for user in users if user in usersFilter]
     usersId = sc.broadcast({b: a for a, b in enumerate(users)})
-    tagusers = data.map(lambda p: (p["user"]["id"], extractTags(p["text"]))) \
+    tagusers = data.map(lambda p: (p["user"]["id_str"], getHashtags(p))) \
                    .filter(lambda (u, tags): u in usersId.value) \
                    .flatMap(lambda (u, tags): [(t, u) for t in tags])
     usersCount = tagusers.mapValues(lambda user: Counter({user: 1})) \
