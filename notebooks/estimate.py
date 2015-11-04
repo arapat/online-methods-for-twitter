@@ -1,4 +1,4 @@
-# Databricks notebook source exported at Wed, 28 Oct 2015 18:58:41 UTC
+# Databricks notebook source exported at Wed, 4 Nov 2015 19:31:20 UTC
 import sys
 from hashlib import md5
 
@@ -85,3 +85,12 @@ def getMutualInformation(p1, p2, N, numGroups, groupSize):
   p = getSimilarity(minHash1, minHash2)
   n11 = p * (n1 + n2) / (1 + p)
   return log2(n11 * N / (n1 * n2))
+
+def getLogRatioDiff(pEntity, pCentroid, N, numGroups, groupSize, delta):
+  minHashE, tailZerosE = pEntity
+  minHashC, tailZerosC = pCentroid
+  nE, nC = getUniqueItemsApproximate(tailZerosE, numGroups, groupSize), getUniqueItemsApproximate(tailZerosC, numGroups, groupSize)
+  p = getSimilarity(minHashE, minHashC)
+  n11 = p * (nE + nC) / (1 + p)
+  eps = np.sqrt(log2(2.0 / delta) / (2.0 * nE))
+  return log2(n11 / nE - eps) - log2(nC / N)
