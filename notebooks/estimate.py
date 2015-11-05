@@ -1,4 +1,4 @@
-# Databricks notebook source exported at Wed, 4 Nov 2015 19:31:20 UTC
+# Databricks notebook source exported at Thu, 5 Nov 2015 22:59:53 UTC
 import sys
 from hashlib import md5
 
@@ -20,7 +20,7 @@ class HashMD5:
     def hash(value):
       return int(md5((str(value) + strVal).encode('utf-8')).hexdigest()[-length:], 16)
     p = np.ones(self.count) * int(intVal) + self.addon
-    values = np.fromiter(map(hash, p), dtype=np.int32)
+    values = np.fromiter(map(hash, p), dtype=np.int64)
     if mod:
       return values % mod
     return values
@@ -93,4 +93,6 @@ def getLogRatioDiff(pEntity, pCentroid, N, numGroups, groupSize, delta):
   p = getSimilarity(minHashE, minHashC)
   n11 = p * (nE + nC) / (1 + p)
   eps = np.sqrt(log2(2.0 / delta) / (2.0 * nE))
+  if n11 / nE - eps <= 0:
+    return -np.inf
   return log2(n11 / nE - eps) - log2(nC / N)
