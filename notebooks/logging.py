@@ -1,7 +1,9 @@
-# Databricks notebook source exported at Wed, 28 Oct 2015 07:28:16 UTC
+# Databricks notebook source exported at Fri, 6 Nov 2015 11:12:43 UTC
 import logging
 import logging.config
- 
+
+import loggly.handlers
+
 LOGGING_CONFIG = {
     'version': 1, # required
     'disable_existing_loggers': True, # this config overrides all other loggers
