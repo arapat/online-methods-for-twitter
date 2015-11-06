@@ -1,4 +1,4 @@
-# Databricks notebook source exported at Thu, 5 Nov 2015 22:59:53 UTC
+# Databricks notebook source exported at Fri, 6 Nov 2015 11:41:45 UTC
 import sys
 from hashlib import md5
 
@@ -9,20 +9,16 @@ MAXINT = sys.maxint
 SEED = 20151028
 
 class HashMD5:
-  def __init__(self, count, length = 5):
+  def __init__(self, count, PRIME = 68719476767):
     np.random.seed(SEED)
     self.count = count
-    self.length = length
-    self.addon = np.array([np.random.randint(MAXINT) for i in range(count)])
+    self.prime = PRIME
+    self.par1 = np.array([np.random.randint(MAXINT) for k in range(count)])
+    self.par2 = np.array([np.random.randint(MAXINT) for k in range(count)])
 
-  def getHash(self, intVal, strVal = '', mod = None):
-    length = self.length
-    def hash(value):
-      return int(md5((str(value) + strVal).encode('utf-8')).hexdigest()[-length:], 16)
-    p = np.ones(self.count) * int(intVal) + self.addon
-    values = np.fromiter(map(hash, p), dtype=np.int64)
-    if mod:
-      return values % mod
+  def getHash(self, intVal, strVal = ''):
+    p = np.ones(self.count) * int(intVal) * self.par1 + self.par2
+    return p % self.prime
     return values
 
   def getCount(self):
@@ -38,6 +34,7 @@ def countTailZeros(x):
   count x's trailing zero bits,
   so if x is 1101000 (base 2), return 3
   '''
+  x = int(x)
   if x:
     c = 0
     x = (x ^ (x - 1)) >> 1 # Set x's trailing 0s to 1s and zero rest
@@ -76,7 +73,8 @@ def getJSD(p1, p2, numGroups, groupSize):
   n10 = (n1 - p * n2) / (1 + p)
   n01 = (n2 - p * n1) / (1 + p)
   n11 = p * (n1 + n2) / (1 + p)
-  return n10 * js10 + n01 * js01 + n11 * js11
+  return n10 * js10 + n01 * js01 + n11 * js11littleec
+
 
 def getMutualInformation(p1, p2, N, numGroups, groupSize):
   minHash1, tailZeros1 = p1
@@ -91,7 +89,7 @@ def getLogRatioDiff(pEntity, pCentroid, N, numGroups, groupSize, delta):
   minHashC, tailZerosC = pCentroid
   nE, nC = getUniqueItemsApproximate(tailZerosE, numGroups, groupSize), getUniqueItemsApproximate(tailZerosC, numGroups, groupSize)
   p = getSimilarity(minHashE, minHashC)
-  n11 = p * (nE + nC) / (1 + p)
+  n11 = min(nE, nC, p * (nE + nC) / (1 + p))
   eps = np.sqrt(log2(2.0 / delta) / (2.0 * nE))
   if n11 / nE - eps <= 0:
     return -np.inf
