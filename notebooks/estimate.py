@@ -1,4 +1,4 @@
-# Databricks notebook source exported at Fri, 6 Nov 2015 11:41:45 UTC
+# Databricks notebook source exported at Tue, 22 Dec 2015 23:37:55 UTC
 import sys
 from hashlib import md5
 
@@ -6,10 +6,9 @@ from numpy import log2
 import numpy as np
 
 MAXINT = sys.maxint
-SEED = 20151028
 
 class HashMD5:
-  def __init__(self, count, PRIME = 68719476767):
+  def __init__(self, count, PRIME = 68719476767, SEED = 20151028):
     np.random.seed(SEED)
     self.count = count
     self.prime = PRIME
@@ -73,7 +72,7 @@ def getJSD(p1, p2, numGroups, groupSize):
   n10 = (n1 - p * n2) / (1 + p)
   n01 = (n2 - p * n1) / (1 + p)
   n11 = p * (n1 + n2) / (1 + p)
-  return n10 * js10 + n01 * js01 + n11 * js11littleec
+  return n10 * js10 + n01 * js01 + n11 * js11
 
 
 def getMutualInformation(p1, p2, N, numGroups, groupSize):
@@ -84,13 +83,15 @@ def getMutualInformation(p1, p2, N, numGroups, groupSize):
   n11 = p * (n1 + n2) / (1 + p)
   return log2(n11 * N / (n1 * n2))
 
-def getLogRatioDiff(pEntity, pCentroid, N, numGroups, groupSize, delta):
+def getLogRatioDiff(pEntity, pCentroid, N, numGroups, groupSize, delta, upper = False):
   minHashE, tailZerosE = pEntity
   minHashC, tailZerosC = pCentroid
   nE, nC = getUniqueItemsApproximate(tailZerosE, numGroups, groupSize), getUniqueItemsApproximate(tailZerosC, numGroups, groupSize)
   p = getSimilarity(minHashE, minHashC)
   n11 = min(nE, nC, p * (nE + nC) / (1 + p))
   eps = np.sqrt(log2(2.0 / delta) / (2.0 * nE))
+  if upper:
+    return log2(n11 / nE + eps) - log2(nC / N)
   if n11 / nE - eps <= 0:
     return -np.inf
   return log2(n11 / nE - eps) - log2(nC / N)
