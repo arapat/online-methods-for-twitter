@@ -1,4 +1,4 @@
-# Databricks notebook source exported at Wed, 28 Oct 2015 18:28:31 UTC
+# Databricks notebook source exported at Wed, 2 Mar 2016 23:01:51 UTC
 
 import json
 import re
@@ -12,12 +12,18 @@ def _tryLoad(l):
     except:
         return None
 
+def allTweetsFromFile(dataURL):
+    return sc.textFile(dataURL) \
+             .map(_tryLoad)
 
 def tweetsFromFile(dataURL):
     return sc.textFile(dataURL) \
              .map(_tryLoad) \
              .filter(_hasHashtags)
 
+def tweetsFromFileNoFilter(dataURL):
+    return sc.textFile(dataURL) \
+             .map(_tryLoad)
 
 def _hasHashtags(jsonObj):
     return jsonObj and 'entities' in jsonObj and jsonObj['entities']['hashtags']
